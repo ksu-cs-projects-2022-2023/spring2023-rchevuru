@@ -2,6 +2,7 @@ from enum import unique
 from itertools import product
 from msilib.schema import tables
 from turtle import title
+from xml.etree.ElementInclude import include
 from app import app
 from flask import render_template,request, redirect
 import pandas as pd
@@ -53,8 +54,15 @@ def Project():
         
         print(User_partners)
         if(len(User_partners) > 0):
-             PDfilter = PDfilter.query("Partner in @User_partners").dropna(how='all', axis='columns')
-             print(PDfilter.head(100))
+            #if User_partners contains WLD get all partners except WLD 
+            
+            if('WLD' not in User_partners):
+                PDfilter = PDfilter.query("Partner in @User_partners").dropna(how='all', axis='columns')
+               
+        print(PDfilter.head(100))
+        
+       # PDfilter.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/PD.csv")
+
         
         print(User_countries)
         if(len(User_countries) > 0):
@@ -72,22 +80,67 @@ def Project():
         if(len(User_clatureCode) > 0):
              PDfilter = PDfilter.query("NomenclatureCode in @User_clatureCode").dropna(how='all', axis='columns')
              print(PDfilter.head(100))
+             # maybe perform an additional check here
 
-       
 
-        return redirect(request.url)
+        partner_count = PDfilter.groupby('Partner').count().reset_index()
+        product_count = PDfilter.groupby(['Partner','ReporterName','NomenclatureCode'])['ProductDescription'].count().reset_index(name = 'ProductCount')
+        #product_count = PDfilter.groupby(['Partner','ProductDescription','ReporterName','NomenclatureCode']).transform('count')
+        #PDfilter['product_count'] = product_count
+        #PDfilter.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/PD.csv")
+        #product_count.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/add.csv")
+
+        fig = px.line_geo(data_frame=product_count,locations = 'Partner', locationmode= 'ISO-3',
+                           hover_name=product_count['ReporterName'], 
+                           hover_data= { 'ReporterName','ProductCount'},
+                           color= 'Partner', #value needs to be total count instead
+                           #color_continuous_scale=px.colors.sequential.Turbo, 
+                           labels = {'Partner':'Partner'})
+        print('fig')
+        
+
+        fig.update_layout(coloraxis_colorbar=dict(
+            ticktext=PDfilter["Partner"]
+            ))
+        grahJSON = json.dumps(fig, cls= plotly.utils.PlotlyJSONEncoder)
+        #PDfilter.drop('info')
+        #fix error here
+        return render_template("public/project.html", grahJSON = grahJSON,nodup_countries = nodup_countries, 
+                           nodup_partners = nodup_partners,nodup_products = nodup_products,
+                           nodup_clatureCode = nodup_clatureCode)
+    """
     df = px.data.gapminder().query("year==2007")
     #print(df.head(10))
+    
     fig = px.choropleth(df, locations="iso_alpha",
                     color="lifeExp", # lifeExp is a column of gapminder
                     hover_name="country", # column to add to hover information
                     color_continuous_scale=px.colors.sequential.Plasma)
 
     graph1JSON = json.dumps(fig, cls= plotly.utils.PlotlyJSONEncoder)
-
-    return render_template("public/project.html", graph1JSON = graph1JSON,nodup_countries = nodup_countries, 
+    """
+    return render_template("public/project.html",nodup_countries = nodup_countries, 
                            nodup_partners = nodup_partners,nodup_products = nodup_products,
                            nodup_clatureCode = nodup_clatureCode)
+
+@app.route('/included')
+def includedCountries():
+    bigCSV = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/CombinedCounties.csv")
+    print("read \n")
+    Names = sorted(bigCSV["ReporterName"].drop_duplicates())
+    ISO_code3 = sorted(bigCSV["3 Wrd Abb"].drop_duplicates())
+    ISO_code2 = sorted(bigCSV["2 Wrd Abb"].drop_duplicates())
+    country_Lat = sorted(bigCSV["Lat"].drop_duplicates())
+    country_Long = sorted(bigCSV["Lng"].drop_duplicates())
+
+    df = pd.DataFrame()
+    df.insert(0,'Country Name', Names)
+    df.insert(1,'3 word Abbreviation', ISO_code3)
+    df.insert(2,'2 word Abbreviation', ISO_code2)
+    df.insert(3,'Latatude', country_Lat)
+    df.insert(4,'Longitude', country_Long)
+
+    return render_template('public/info.html', tables = [df.to_html()],titles = [' '])
 
 @app.route('/test')
 def testDisplay():
