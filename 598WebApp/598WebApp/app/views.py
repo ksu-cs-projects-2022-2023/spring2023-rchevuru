@@ -12,7 +12,7 @@ import plotly.express as px
 import numpy as np
 
 
-smallcsv = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/SmallCombinedCounties.csv")
+Countrycsv = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/SmallCombinedCounties.csv")
 products = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/CombinedProducts1.csv")
 all_countires = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/All Counties/Countries.csv")
    
@@ -23,18 +23,18 @@ def index():
 @app.route('/about', methods=["GET", "POST"])
 def Project():
    
-    nodup_countries = sorted(smallcsv["ReporterName"].drop_duplicates())
+    nodup_countries = sorted(Countrycsv["ReporterName"].drop_duplicates())
     nodup_products =  sorted(products['ProductDescription'].drop_duplicates())
-    nodup_partners=  sorted(smallcsv['Partner'].drop_duplicates())
-    nodup_clatureCode = sorted(smallcsv['NomenclatureCode'].drop_duplicates())
+    nodup_partners=  sorted(Countrycsv['Partner'].drop_duplicates())
+    nodup_clatureCode = sorted(Countrycsv['NomenclatureCode'].drop_duplicates())
 
     products['ProductCode']=products['ProductCode'].astype(str)
     products['NomenclatureCode']=products['NomenclatureCode'].astype(str)
 
-    smallcsv['ProductCode']=smallcsv['ProductCode'].astype(str)
-    smallcsv['NomenclatureCode']=smallcsv['NomenclatureCode'].astype(str)
+    Countrycsv['ProductCode']=Countrycsv['ProductCode'].astype(str)
+    Countrycsv['NomenclatureCode']=Countrycsv['NomenclatureCode'].astype(str)
 
-    PDmerged = smallcsv.merge(products, how = 'outer', left_on=['NomenclatureCode', 'ProductCode'], right_on=['NomenclatureCode', 'ProductCode']).dropna(how='all', axis='columns')
+    PDmerged = Countrycsv.merge(products, how = 'outer', left_on=['NomenclatureCode', 'ProductCode'], right_on=['NomenclatureCode', 'ProductCode']).dropna(how='all', axis='columns')
     PDmerged.rename({"Unnamed: 0":"a"}, axis="columns", inplace=True)
     PDmerged.drop(["a"], axis=1, inplace=True)
     Country_names = all_countires['name']
@@ -91,11 +91,16 @@ def Project():
         #product_count.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/add.csv")
 
         fig = px.line_geo(data_frame=product_count,locations = 'Partner', locationmode= 'ISO-3',
-                           hover_name=product_count['ReporterName'], 
+                           hover_name=product_count['Partner'], 
                            hover_data= { 'ReporterName','ProductCount'},
-                           color= 'Partner', #value needs to be total count instead
+                           #line_dash = 'Partner', 
+                           color= 'ReporterName', #value needs to be total count instead
                            #color_continuous_scale=px.colors.sequential.Turbo, 
-                           labels = {'Partner':'Partner'})
+                           #labels = {'Partner':'Partner'},
+                           projection='natural earth'
+                           )
+        #fig.update_traces(line=dict(color="Black", width=3))
+
         print('fig')
         
 
@@ -145,11 +150,11 @@ def includedCountries():
 @app.route('/test')
 def testDisplay():
     
-    nodup_countries = sorted(smallcsv["ReporterName"].drop_duplicates())
+    nodup_countries = sorted(Countrycsv["ReporterName"].drop_duplicates())
     nodup_products =  products['Product Description'].drop_duplicates()
-    nodup_partners=  sorted(smallcsv['Partner'].drop_duplicates())
+    nodup_partners=  sorted(Countrycsv['Partner'].drop_duplicates())
    
-    merged = pd.concat([smallcsv,products], join ='outer')
+    merged = pd.concat([Countrycsv,products], join ='outer')
     
     print(merged)
 
