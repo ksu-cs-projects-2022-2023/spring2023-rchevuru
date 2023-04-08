@@ -1,0 +1,17 @@
+{% extends "public/template/template.html" %}
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+{% block title %} Country info {% endblock %}
+
+
+{% block main %}
+<h4>Countries</h4>
+<form method="post">
+    <select name="CountryInfo" id="country_info" class="select-field" style="outline: none; border: none; ">
+        {% for value in nodup_countries %}
+        <option value="{{value}}">{{value}}</option>
+        {% endfor %}
+    </select>
+</form>
+{% endblock %}

@@ -12,10 +12,11 @@ import plotly.express as px
 import numpy as np
 
 
-Countrycsv = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/SmallCombinedCounties.csv")
+Countrycsv = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/CombinedCounties2.csv")
 products = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/CombinedProducts1.csv")
 all_countires = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/All Counties/Countries.csv")
    
+#Countrycsv.rename(columns ={'NomenCode': 'NomenclatureCode'})
 
 @app.route('/')
 def index():
@@ -35,8 +36,8 @@ def Project():
     Countrycsv['NomenclatureCode']=Countrycsv['NomenclatureCode'].astype(str)
 
     PDmerged = Countrycsv.merge(products, how = 'outer', left_on=['NomenclatureCode', 'ProductCode'], right_on=['NomenclatureCode', 'ProductCode']).dropna(how='all', axis='columns')
-    PDmerged.rename({"Unnamed: 0":"a"}, axis="columns", inplace=True)
-    PDmerged.drop(["a"], axis=1, inplace=True)
+    #PDmerged.rename({"Unnamed: 0":"a"}, axis="columns", inplace=True)
+   # PDmerged.drop(["a"], axis=1, inplace=True)
     Country_names = all_countires['name']
     PDmerged['country names'] = Country_names
 
@@ -93,11 +94,11 @@ def Project():
         fig = px.line_geo(data_frame=product_count,locations = 'Partner', locationmode= 'ISO-3',
                            hover_name=product_count['Partner'], 
                            hover_data= { 'ReporterName','ProductCount'},
-                           #line_dash = 'Partner', 
+                           line_dash = 'ProductCount', 
                            color= 'ReporterName', #value needs to be total count instead
                            #color_continuous_scale=px.colors.sequential.Turbo, 
                            #labels = {'Partner':'Partner'},
-                           projection='natural earth'
+                           projection='orthographic'
                            )
         #fig.update_traces(line=dict(color="Black", width=3))
 
@@ -130,23 +131,30 @@ def Project():
 
 @app.route('/included')
 def includedCountries():
-    bigCSV = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/CombinedCounties.csv")
-    print("read \n")
-    Names = sorted(bigCSV["ReporterName"].drop_duplicates())
-    ISO_code3 = sorted(bigCSV["3 Wrd Abb"].drop_duplicates())
-    ISO_code2 = sorted(bigCSV["2 Wrd Abb"].drop_duplicates())
-    country_Lat = sorted(bigCSV["Lat"].drop_duplicates())
-    country_Long = sorted(bigCSV["Lng"].drop_duplicates())
 
-    df = pd.DataFrame()
-    df.insert(0,'Country Name', Names)
-    df.insert(1,'3 word Abbreviation', ISO_code3)
-    df.insert(2,'2 word Abbreviation', ISO_code2)
-    df.insert(3,'Latatude', country_Lat)
-    df.insert(4,'Longitude', country_Long)
+    df = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/CombinedCountiesNOTImportant.csv")
+    #pd.set_option('display.max_colwidth', 100)
+    return render_template('public/info.html', tables = [df.to_html(col_space=100,justify='left', float_format='{:10.2f}'.format)],titles = [''])
 
-    return render_template('public/info.html', tables = [df.to_html()],titles = [' '])
+@app.route('/country_info')
+def countryInfo():
+    nodup_countries = sorted(Countrycsv["ReporterName"].drop_duplicates())
 
+    products['ProductCode']=products['ProductCode'].astype(str)
+    products['NomenclatureCode']=products['NomenclatureCode'].astype(str)
+
+    Countrycsv['ProductCode']=Countrycsv['ProductCode'].astype(str)
+    Countrycsv['NomenclatureCode']=Countrycsv['NomenclatureCode'].astype(str)
+
+    PDmerged = Countrycsv.merge(products, how = 'outer', left_on=['NomenclatureCode', 'ProductCode'], right_on=['NomenclatureCode', 'ProductCode']).dropna(how='all', axis='columns')
+
+    if(request.method == 'POST'):
+        req = request.form
+        User_countries = req.getlist('country_info')
+
+
+    return render_template("public/country_info.html",nodup_countries = nodup_countries
+                          )
 @app.route('/test')
 def testDisplay():
     

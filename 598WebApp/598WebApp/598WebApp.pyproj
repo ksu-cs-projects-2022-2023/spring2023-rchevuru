@@ -51,6 +51,7 @@
     <Content Include="app\static\CSS\css-proj.css" />
     <Content Include="app\static\CSS\TemplateCSS.css" />
     <Content Include="app\static\JS\JS-proj.js" />
+    <Content Include="app\templates\public\country_info.html" />
     <Content Include="app\templates\public\info.html" />
     <Content Include="app\templates\public\project.html" />
     <Content Include="app\templates\public\index.html" />
