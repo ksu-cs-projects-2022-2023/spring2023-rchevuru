@@ -1,130 +1,221 @@
-from enum import unique
-from itertools import product
-from msilib.schema import tables
-from turtle import title
-from xml.etree.ElementInclude import include
+# importinf inportant packages 
+from pickle import GLOBAL, TRUE
 from app import app
-from flask import render_template,request, redirect
+from flask import render_template,request, flash
 import pandas as pd
 import json
 import plotly
 import plotly.express as px
 import numpy as np
+import plotly.graph_objects as go
+import plotly.io as io 
 
-
-Countrycsv = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/CombinedCounties2.csv")
+# Reading the data from datasources - CSV files
+Countrycsv = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/SmallCombinedCounties1.csv")
 products = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/CombinedProducts1.csv")
 all_countires = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/All Counties/Countries.csv")
    
 #Countrycsv.rename(columns ={'NomenCode': 'NomenclatureCode'})
 
+
+# Read me 
 @app.route('/')
 def index():
          return render_template("public/index.html")
+
+#Actaul project - user form
 @app.route('/about', methods=["GET", "POST"])
 def Project():
-   
-    nodup_countries = sorted(Countrycsv["ReporterName"].drop_duplicates())
+
+    #something to check for later
+    badcombo = False
+    global product_count
+
+    # User options for the html page
+    nodup_countries = sorted(Countrycsv["ReporterName"].drop_duplicates()) 
     nodup_products =  sorted(products['ProductDescription'].drop_duplicates())
+    #nodup_products['ProductDescription'] = nodup_products['ProductDescription'].replave("", 'NoProduct')
     nodup_partners=  sorted(Countrycsv['Partner'].drop_duplicates())
     nodup_clatureCode = sorted(Countrycsv['NomenclatureCode'].drop_duplicates())
 
+    #Converting Product code into string format and NomenclatureCode in product dataframe
     products['ProductCode']=products['ProductCode'].astype(str)
     products['NomenclatureCode']=products['NomenclatureCode'].astype(str)
 
+    #Converting Product code into string format and NomenclatureCode in Countries dataframe
     Countrycsv['ProductCode']=Countrycsv['ProductCode'].astype(str)
     Countrycsv['NomenclatureCode']=Countrycsv['NomenclatureCode'].astype(str)
 
+    # Merging the data with Country CSV file
     PDmerged = Countrycsv.merge(products, how = 'outer', left_on=['NomenclatureCode', 'ProductCode'], right_on=['NomenclatureCode', 'ProductCode']).dropna(how='all', axis='columns')
     #PDmerged.rename({"Unnamed: 0":"a"}, axis="columns", inplace=True)
-   # PDmerged.drop(["a"], axis=1, inplace=True)
-    Country_names = all_countires['name']
-    PDmerged['country names'] = Country_names
+    #PDmerged.drop(["a"], axis=1, inplace=True)
 
+    
+
+    # User Input from HTML file
     if(request.method == 'POST'):
         req = request.form
         User_partners = req.getlist('Partners')
-        User_countries = req.getlist('countries')
+        User_countries = req.getlist('Countries')
         User_products = req.getlist('Products')
         User_clatureCode = req.getlist('ClatureCode')
-        
-        
-        PDfilter = PDmerged
-      
-     
-        
-        print(User_partners)
-        if(len(User_partners) > 0):
-            #if User_partners contains WLD get all partners except WLD 
-            
-            if('WLD' not in User_partners):
-                PDfilter = PDfilter.query("Partner in @User_partners").dropna(how='all', axis='columns')
-               
-        print(PDfilter.head(100))
-        
-       # PDfilter.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/PD.csv")
-
-        
-        print(User_countries)
-        if(len(User_countries) > 0):
-             PDfilter = PDfilter.query("ReporterName in @User_countries").dropna(how='all', axis='columns')
-             print(PDfilter.head(100))
-
-        print(User_products)
-        
-        if(len(User_products) > 0):
-             PDfilter = PDfilter.query("ProductDescription in @User_products & ProductDescription.notnull()").dropna(how='all', axis='columns')
-             print(PDfilter.head(100))
-        
-
+        print('user code')
         print(User_clatureCode)
-        if(len(User_clatureCode) > 0):
-             PDfilter = PDfilter.query("NomenclatureCode in @User_clatureCode").dropna(how='all', axis='columns')
-             print(PDfilter.head(100))
-             # maybe perform an additional check here
-
-
-        partner_count = PDfilter.groupby('Partner').count().reset_index()
-        product_count = PDfilter.groupby(['Partner','ReporterName','NomenclatureCode'])['ProductDescription'].count().reset_index(name = 'ProductCount')
-        #product_count = PDfilter.groupby(['Partner','ProductDescription','ReporterName','NomenclatureCode']).transform('count')
-        #PDfilter['product_count'] = product_count
-        #PDfilter.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/PD.csv")
-        #product_count.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/add.csv")
-
-        fig = px.line_geo(data_frame=product_count,locations = 'Partner', locationmode= 'ISO-3',
-                           hover_name=product_count['Partner'], 
-                           hover_data= { 'ReporterName','ProductCount'},
-                           line_dash = 'ProductCount', 
-                           color= 'ReporterName', #value needs to be total count instead
-                           #color_continuous_scale=px.colors.sequential.Turbo, 
-                           #labels = {'Partner':'Partner'},
-                           projection='orthographic'
-                           )
-        #fig.update_traces(line=dict(color="Black", width=3))
-
-        print('fig')
         
+        
+        # Initializing data frame for filtring the data based on user input
+        PDfilter = PDmerged
+        if(len(User_countries) > 0 and len(User_partners)  > 0):
+            
+            try:
+                
+                #Filtering dataframe  with User ption - Countries
+                print(User_countries)
+                if(len(User_countries) > 0):
+                    PDfilter = PDfilter.query("ReporterName in @User_countries & ReporterName.notnull()").dropna(how='all', axis='columns')
+                    #print(PDfilter.head(100))
+                
+                #Filtering dataframe  with User ption - Partners
+                print(User_partners)
+                if(len(User_partners) > 0):
+                #if User_partners contains WLD get all partners except WLD 
+            
+                 if('WLD' not in User_partners):
+                    PDfilter = PDfilter.query("Partner in @User_partners & Partner.notnull()").dropna(how='all', axis='columns')
 
-        fig.update_layout(coloraxis_colorbar=dict(
-            ticktext=PDfilter["Partner"]
-            ))
+                 if('WLD'  in User_partners):
+                    PDfilter = PDfilter.set_index("Partner")
+                    PDfilter = PDfilter.drop('WLD')
+               
+                 #Filtering dataframe  with User option - NomenClatureCode
+                if(len(User_clatureCode) > 0):
+                    PDfilter = PDfilter.query("NomenclatureCode in @User_clatureCode & NomenclatureCode.notnull()").dropna(how='all', axis='columns')
+                    
+                print(PDfilter.head(100))           
+                
+                #Filtering dataframe  with User ption - Products
+                #print(User_products)        
+                if(len(User_products) > 0):
+                    PDfilter = PDfilter.query("ProductDescription in @User_products & ProductDescription.notnull()").dropna(how='all', axis='columns')
+                    #print(PDfilter.head(100))
+                else:
+                    if (not 'ProductDescription' in PDfilter):
+                         #PDfilter.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/pdf.csv")
+                         #PDfilter = PDfilter.query("ProductDescription in @User_products & ProductDescription.notnull()").dropna(how='all', axis='columns')
+                         PDfilter['ProductDescription']=''
+                    
+        
+               
+                # Drop the duplicate from the dataset
+                #PDfilter= PDfilter.drop_duplicates(subset=['Partner','3 Wrd Abb','ReporterName','NomenclatureCode','ProductDescription'])
+
+                #Creating a new column ProductCOunt based on the ProductDescription                
+                PDfilter['ProductCount'] = np.where(PDfilter['ProductDescription']=='', 0, 1)
+                
+                #PDfilter.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/pdf.csv")
+  
+                              
+                #product_count = PDfilter.groupby(['Partner','3 Wrd Abb','ReporterName','NomenclatureCode'])['ProductDescription'].count().reset_index(name = 'ProductCount')
+                product_count = PDfilter.groupby(['Partner','3 Wrd Abb','ReporterName','NomenclatureCode'])['ProductCount'].sum().reset_index()
+                product_count.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/add.csv")
+
+                badcombo = False   
+                print ("cs22")
+            #throws a warning if there is a wrong combo
+            except:
+                flash("Try again, No Data for the combo", "warning")
+                badcombo = True 
+                print ("in Exception")
+
+        else:
+                flash("Please select both partner and country! Select WLD for all partners", "danger")
+                print ("RN 4")
+                badcombo = True 
+        
+        if ( badcombo):
+            return render_template("public/project.html",nodup_countries = nodup_countries, 
+                           nodup_partners = nodup_partners,nodup_products = nodup_products,
+                           nodup_clatureCode = nodup_clatureCode)
+        '''else:
+            print ("SR1")
+            flash("Try again, wrong combo", "danger")
+        '''
+
+        PDfilter.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/PD.csv")
+        
+        # Initialize DF 
+
+        df = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/add.csv", sep=',', header=None,
+                          names=['Sl No','Partner Code','Country Code','Country Name' , 'NomenclatureCode' ,'ProductCount'])
+
+        #print(all_countires)
+        # Append the Partner's coordinates to the Country dataframe
+
+        df_countries = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/All Counties/Countries.csv", sep=',', header=None,
+                          names=['name','2 Wrd Abb','3 Wrd Abb','UN Code','Lat','Lng'])
+
+
+        df = pd.merge(df, df_countries[['3 Wrd Abb','Lat','Lng']],
+              how='inner', left_on='Partner Code', right_on='3 Wrd Abb', suffixes=('_Partner','_Country'))
+
+       
+        # Append the  Country Names's coordinates to the Country' dataframe
+        df = pd.merge(df, df_countries[['3 Wrd Abb','Lat','Lng']],
+              how='inner', left_on='Country Code', right_on='3 Wrd Abb', suffixes=('_Partner','_Country'))
+
+
+        # Keep only Origin/Destination Country and Partner columns, and their Latitude/Longitude
+        df = df.drop(columns=['Partner Code','Country Name' ,'Country Code'])
+		#df = df.drop(columns=['Partner','ReporterName' ,'3 Wrd Abb'])
+ 
+        fig = go.Figure()
+        
+        for i in range(len(df)):
+            tracename = str(i+1) + str (' ') +str(df['3 Wrd Abb_Partner'][i]) + ' - ' + str(df['3 Wrd Abb_Country'][i])
+            #print(tracename)
+            fig.add_trace(go.Scattergeo(locationmode = 'ISO-3',
+                          lon = [ df['Lng_Partner'][i], df['Lng_Country'][i] ],
+                          lat = [ df['Lat_Partner'][i], df['Lat_Country'][i] ],
+                          legendgroup =tracename,
+                          name=tracename,
+                          text = tracename + ' ' +str(df['NomenclatureCode'][i]) + ' '  +' Product Count : ' +str(df['ProductCount'][i]) ,
+                          #hoverinfo = str(df['ProductCount'][i]) ,
+                          mode = 'lines',
+                          line = dict(width = 1) )#,color = 'red')   
+            )       
+        # Define Plots Layout
+        
+        fig.update_geos(projection_type="orthographic")
+
+        fig.update_layout(title_text = '<b>Interactions Between Nations Though Trade </b> <br> Results',
+                          showlegend = True,
+                          geo = dict(scope = 'world',
+                         # projection=dict( type='azimuthal equal area' ),
+                          showland = True,
+                          #landcolor = 'rgb(243, 243, 243)',
+                          #countrycolor = 'rgb(204, 204, 204)',
+                                    ),
+                          )
+        #fig.show()
+        
+        print("finish")
+
+        #html = fig.to_html(full_html=True, include_plotlyjs=True)
+        #grahJSON= io.to_html(fig, include_plotlyjs='cdn',full_html = True)
         grahJSON = json.dumps(fig, cls= plotly.utils.PlotlyJSONEncoder)
+        io.to_html(fig, include_plotlyjs='cdn',full_html = True)
         #PDfilter.drop('info')
         #fix error here
+        '''
+        filePath="C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/project.html"
+        with open(filePath, "w") as f:
+            f.write(html)
+        '''
         return render_template("public/project.html", grahJSON = grahJSON,nodup_countries = nodup_countries, 
                            nodup_partners = nodup_partners,nodup_products = nodup_products,
                            nodup_clatureCode = nodup_clatureCode)
-    """
-    df = px.data.gapminder().query("year==2007")
-    #print(df.head(10))
-    
-    fig = px.choropleth(df, locations="iso_alpha",
-                    color="lifeExp", # lifeExp is a column of gapminder
-                    hover_name="country", # column to add to hover information
-                    color_continuous_scale=px.colors.sequential.Plasma)
 
-    graph1JSON = json.dumps(fig, cls= plotly.utils.PlotlyJSONEncoder)
-    """
     return render_template("public/project.html",nodup_countries = nodup_countries, 
                            nodup_partners = nodup_partners,nodup_products = nodup_products,
                            nodup_clatureCode = nodup_clatureCode)
@@ -132,9 +223,9 @@ def Project():
 @app.route('/included')
 def includedCountries():
 
-    df = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/CombinedCountiesNOTImportant.csv")
+    #df = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/All Counties.csv")
     #pd.set_option('display.max_colwidth', 100)
-    return render_template('public/info.html', tables = [df.to_html(col_space=100,justify='left', float_format='{:10.2f}'.format)],titles = [''])
+    return render_template('public/info.html', tables = [all_countires.to_html(col_space=100,justify='left', float_format='{:10.2f}'.format)],titles = [''])
 
 @app.route('/country_info')
 def countryInfo():
@@ -157,16 +248,15 @@ def countryInfo():
                           )
 @app.route('/test')
 def testDisplay():
-    
-    nodup_countries = sorted(Countrycsv["ReporterName"].drop_duplicates())
-    nodup_products =  products['Product Description'].drop_duplicates()
-    nodup_partners=  sorted(Countrycsv['Partner'].drop_duplicates())
-   
-    merged = pd.concat([Countrycsv,products], join ='outer')
-    
-    print(merged)
+    bigscsv = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/CombinedCounties2.csv")
 
-    #merged = pd.merge(nodup_countries, nodup_countries, left_on='Partner'], right_on=['3 Wrd Abb'])
+    products['ProductCode']=products['ProductCode'].astype(str)
+    products['NomenclatureCode']=products['NomenclatureCode'].astype(str)
 
-    return render_template('Testing/test.html')
+    Countrycsv['ProductCode']=bigscsv['ProductCode'].astype(str)
+    Countrycsv['NomenclatureCode']=bigscsv['NomenclatureCode'].astype(str)
+
+    PDmerged = Countrycsv.merge(products, how = 'outer', left_on=['NomenclatureCode', 'ProductCode'], right_on=['NomenclatureCode', 'ProductCode']).dropna(how='all', axis='columns')
+
+    return render_template('public/info.html', tables = [PDmerged.to_html(col_space=100,justify='left', float_format='{:10.2f}'.format)],titles = [''])
                            

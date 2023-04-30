@@ -1,6 +1,6 @@
 import pandas as pd
 import random
-smallcsv = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/SmallCombinedCounties.csv")
+smallcsv = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/SmallCombinedCounties1.csv")
 products = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/CombinedProducts1.csv")
 all_countires = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/All Counties/Countries.csv")
 
@@ -16,8 +16,8 @@ smallcsv['NomenclatureCode']=smallcsv['NomenclatureCode'].astype(str)
 
 #PDmerged = products.merge(smallcsv, on= ['NomenclatureCode','ProductCode'])#.dropna(how='all', axis='columns')
 PDmerged = smallcsv.merge(products, how = 'outer', left_on=['NomenclatureCode', 'ProductCode'], right_on=['NomenclatureCode', 'ProductCode']).dropna(how='all', axis='columns')
-PDmerged.rename({"Unnamed: 0":"a"}, axis="columns", inplace=True)
-PDmerged.drop(["a"], axis=1, inplace=True)
+#PDmerged.rename({"Unnamed: 0":"a"}, axis="columns", inplace=True)
+#PDmerged.drop(["a"], axis=1, inplace=True)
 Country_names = all_countires['name']
 PDmerged['country names'] = Country_names
 #merged.rename({"Unnamed: 5":"a"}, axis="columns", inplace=True)
@@ -26,7 +26,7 @@ PDmerged['country names'] = Country_names
 print(PDmerged.head(100))
 print("tail")
 print(PDmerged.tail(100))
-#PDmerged.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/Test.csv")
+#PDmerged.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/Testb2.csv")
 print("done")
 
 

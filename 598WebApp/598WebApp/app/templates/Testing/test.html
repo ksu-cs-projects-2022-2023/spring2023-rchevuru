@@ -6,17 +6,26 @@
 
 
 {% block main %}
-<div align="center">
-    <table>
-        <h1>
-            {% for table in tables %}
-            <h2>{{titles[loop.index]}}</h2>
-            {{table | safe}}
-            {% endfor %}
-        </h1>
-    </table>
+<div class="container">
+    <div class="row">
+        <div class="col">
+            <h1>List of countries</h1>
+            <hr />
+            <div align="center">
+                <table>
+                    <h1>
+                        {% for table in tables %}
+                        <h2>{{titles[loop.index]}}</h2>
+                        {{table | safe}}
+                        {% endfor %}
+                    </h1>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
 
 
+{% endblock %}
 {% endblock %}
