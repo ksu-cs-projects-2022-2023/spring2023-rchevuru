@@ -10,5 +10,5 @@ for file in csv_files:
     tempRead = pd.read_csv(file,encoding="utf-8") 
     print(file)
     combined = combined.append(tempRead, ignore_index=True)
-combined.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/SmallCombinedCounties.csv")
+combined.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/SmallCombinedCounties1_5.csv")
 print("Done")

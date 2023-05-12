@@ -1,11 +1,11 @@
 # importinf inportant packages 
 from pickle import GLOBAL, TRUE
 from app import app
-from flask import render_template,request, flash
+from flask import render_template,request, flash, redirect
 import pandas as pd
 import json
 import plotly
-import plotly.express as px
+#import plotly.express as px
 import numpy as np
 import plotly.graph_objects as go
 import plotly.io as io 
@@ -197,13 +197,13 @@ def Project():
                           #countrycolor = 'rgb(204, 204, 204)',
                                     ),
                           )
-        #fig.show()
+        fig.show()
         
         print("finish")
 
         #html = fig.to_html(full_html=True, include_plotlyjs=True)
         #grahJSON= io.to_html(fig, include_plotlyjs='cdn',full_html = True)
-        grahJSON = json.dumps(fig, cls= plotly.utils.PlotlyJSONEncoder)
+       # grahJSON = json.dumps(fig, cls= plotly.utils.PlotlyJSONEncoder)
         io.to_html(fig, include_plotlyjs='cdn',full_html = True)
         #PDfilter.drop('info')
         #fix error here
@@ -212,7 +212,8 @@ def Project():
         with open(filePath, "w") as f:
             f.write(html)
         '''
-        return render_template("public/project.html", grahJSON = grahJSON,nodup_countries = nodup_countries, 
+        return render_template("public/project.html", #grahJSON = grahJSON,
+                               nodup_countries = nodup_countries, 
                            nodup_partners = nodup_partners,nodup_products = nodup_products,
                            nodup_clatureCode = nodup_clatureCode)
 
@@ -227,8 +228,9 @@ def includedCountries():
     #pd.set_option('display.max_colwidth', 100)
     return render_template('public/info.html', tables = [all_countires.to_html(col_space=100,justify='left', float_format='{:10.2f}'.format)],titles = [''])
 
-@app.route('/country_info')
-def countryInfo():
+
+@app.route('/country_info',methods=["GET", "POST"])
+def country_info():
     nodup_countries = sorted(Countrycsv["ReporterName"].drop_duplicates())
 
     products['ProductCode']=products['ProductCode'].astype(str)
@@ -238,14 +240,49 @@ def countryInfo():
     Countrycsv['NomenclatureCode']=Countrycsv['NomenclatureCode'].astype(str)
 
     PDmerged = Countrycsv.merge(products, how = 'outer', left_on=['NomenclatureCode', 'ProductCode'], right_on=['NomenclatureCode', 'ProductCode']).dropna(how='all', axis='columns')
-
+    #PDmerged.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/testing/print.csv")
+        
     if(request.method == 'POST'):
         req = request.form
-        User_countries = req.getlist('country_info')
+        User_countries = req['CountryInfo']
+        variable  = PDmerged
+          #Filtering dataframe  with User option - NomenClatureCode
+        if(len(User_countries) > 0):
+            quired = variable.query("ReporterName in @User_countries & ReporterName.notnull()").dropna(how='all', axis='columns')
+            print(quired.head(100))
+        search_partner = sorted(quired['Partner'].dropna().drop_duplicates().astype(str))
+        search_restriction = sorted(quired['NomenclatureCode'].dropna().drop_duplicates().astype(str))
+        search_abb = sorted(quired['3 Wrd Abb'].dropna().drop_duplicates().astype(str))
+        search_lat = quired['Lat'].dropna().drop_duplicates().astype(str)
+        search_long = quired['Lng'].dropna().drop_duplicates().astype(str)
 
+        if (not 'ProductDescription' in quired):
+       
+            search_product = ["No Products"]
+        else:
+            search_product = sorted(quired['ProductDescription'].dropna().drop_duplicates().astype(str))
+       
+        return render_template("public/country_info.html", nodup_countries = nodup_countries, search_partner = search_partner, search_restriction = search_restriction,
+                               search_abb = search_abb, search_lat = search_lat, search_long = search_long, search_product = search_product)
 
-    return render_template("public/country_info.html",nodup_countries = nodup_countries
-                          )
+    return render_template("public/country_info.html",nodup_countries = nodup_countries)
+
+@app.route('/change_request',methods=["GET", "POST"])
+def request_change():
+    nodup_countries = sorted(Countrycsv["ReporterName"].drop_duplicates())
+    
+    if(request.method == 'POST'):
+        #req = request.form
+        User_countries =  request.form['CountryInfo']
+        text =  request.form['text']
+
+        df = pd.DataFrame()
+        row = {'Country': User_countries, 'Discription': text}
+        df= df.append(row,ignore_index=True)
+        df.to_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/User_input/response.csv")
+        return redirect(request.url)
+   
+    return render_template("public/change_request.html",nodup_countries = nodup_countries)                       
 @app.route('/test')
 def testDisplay():
     bigscsv = pd.read_csv("C:/Users/nonAdmin/Documents/Classes/Cs/598(new)/seperate python scripts_Coloab doesn't like_/combine/results/CombinedCounties2.csv")

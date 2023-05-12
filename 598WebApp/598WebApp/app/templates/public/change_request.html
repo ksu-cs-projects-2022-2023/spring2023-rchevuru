@@ -1,0 +1,21 @@
+{% extends "public/template/template.html" %}
+
+
+{% block title %} Change request {% endblock %}
+
+
+{% block main %}
+<h4>Country</h4>
+<form method="POST">
+    <select name="CountryInfo" id="country_info" class="select-field" style="outline: none; border: none; ">
+        {% for value in nodup_countries %}
+        <option value="{{value}}">{{value}}</option>
+        {% endfor %}
+    </select>
+    <input name="text" rows="10" cols="50" />
+    <button type="submit" class="btn btn-primary" style="position:center;">
+        Submit
+    </button>
+</form>
+
+        {% endblock %}

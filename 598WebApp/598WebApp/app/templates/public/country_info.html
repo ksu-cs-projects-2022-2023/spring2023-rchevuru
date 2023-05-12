@@ -1,17 +1,74 @@
 {% extends "public/template/template.html" %}
 
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-{% block title %} Country info {% endblock %}
-
+{% block title %} Country Info {% endblock %}
 
 {% block main %}
-<h4>Countries</h4>
-<form method="post">
+<h4>Country</h4>
+<form method="POST">
     <select name="CountryInfo" id="country_info" class="select-field" style="outline: none; border: none; ">
         {% for value in nodup_countries %}
         <option value="{{value}}">{{value}}</option>
         {% endfor %}
     </select>
+    <button type="submit" class="btn btn-primary" style="position:center;">
+        Submit
+    </button>
+
+
+    <div class="row p-4">
+        <div class="card m-auto">
+            <div class="card-body">
+                <h3>Basic Country Info</h3>
+                <div id="Lat">
+                    <h4>Latitude</h4>
+                    {% for val in search_lat %}
+                    <p>{{val}}</p>
+                    {% endfor %}
+                </div>
+                <br />
+                <div id="Long">
+                    <h4>Longitude</h4>
+                    {% for val in search_long %}
+                    <p>{{val}}</p>
+                    {% endfor %}
+                </div>
+                <br />
+                <div id="NomenclatureCode">
+                    <h4>Restriction</h4>
+                    {% for val in search_restriction %}
+                    <p>{{val}}</p>
+                    {% endfor %}
+                </div>
+                <br />
+                <div id="Abbreviation">
+                    <h4>Abbreviation</h4>
+                    {% for val in search_abb %}
+                    <p>{{val}}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="card m-auto">
+            <div class="card-body">
+                <div id="partner">
+                    <h3>Partners</h3>
+                    {% for partner in search_partner %}
+                    <p>{{partner}}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card m-auto">
+            <div class="card-body">
+                <div id="products">
+                    <h3>Products</h3>
+                    {% for products in search_product %}
+                    <p>{{products}}</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
 </form>
 {% endblock %}
